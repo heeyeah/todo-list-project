@@ -23,7 +23,7 @@ public class TodoService {
 		Optional<TodoComponentDto> optionalResult = todoRedisRepository.findById(id);
 
 		TodoComponentDto todoData = optionalResult.orElse(null);
-		
+	
         return todoData;
 	}
 }

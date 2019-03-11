@@ -3,7 +3,13 @@ package com.todo.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Description;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -32,16 +38,42 @@ public class TodoController {
 	 */
 
 	@GetMapping(value="/data")
+	@Description("Get single todo data")
 	@ResponseBody
-	public TodoComponentDto getTodoData(@RequestParam(value="id") String id) {
+	public ResponseEntity<TodoComponentDto> getTodoData(@RequestParam(required=false, value="id") String id) {
 		
 		TodoComponentDto todoData = todoService.getTodoData(id);
 		
-		if(todoData == null) {
-			// error
-		}
+		HttpStatus httpStatus = (todoData == null) ? HttpStatus.NO_CONTENT : HttpStatus.OK;
 		
-		return todoData;
+		return new ResponseEntity<TodoComponentDto>(todoData, httpStatus);
 	}
 
+	@GetMapping(value="/list")
+	@Description("Get total todo list by paging")
+	public ResponseEntity<TodoComponentDto> getTodoDataByPaging(@RequestParam int pageNum, @RequestParam int pageCount) {
+		
+		return null;
+	}
+
+	@PostMapping(value="/data")
+	@Description("Add todo data")
+	public ResponseEntity<TodoComponentDto> addTodoData(@RequestBody TodoComponentDto todoEntity) {
+		
+		return null;
+	}
+	
+	@PatchMapping(value="/data")
+	@Description("Modfiy todo data")
+	public ResponseEntity<TodoComponentDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) {
+		
+		return null;
+	}
+	
+	@PatchMapping(value = "/checkFinish")
+	@Description("Modify todo data for isFinished field")
+	public ResponseEntity<TodoComponentDto> modifyTodoDataForFinish(@RequestParam String id) {
+		
+		return null;
+	}
 }
