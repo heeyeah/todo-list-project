@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.todo.config.TodoResponse;
 import com.todo.dto.TodoComponentDto;
+import com.todo.dto.TodoListDto;
+import com.todo.dto.TodoResponseDto;
 import com.todo.service.TodoService;
 
 @RestController
@@ -27,19 +30,8 @@ public class TodoController {
 	@Autowired
 	private TodoService todoService;
 
-	/*
-	 * 단건등록
-	 *  - 등록할 때, 태그목록도 받아서 추가해줘야 함.
-	 * 단건수정
-	 * 단건조회
-	 * 목록조회 (페이징)
-	 * 완료처리
-	 * 
-	 */
-
 	@GetMapping(value="/data")
 	@Description("Get single todo data")
-	@ResponseBody
 	public ResponseEntity<TodoComponentDto> getTodoData(@RequestParam(required=false, value="id") String id) {
 		
 		TodoComponentDto todoData = todoService.getTodoData(id);
@@ -51,29 +43,45 @@ public class TodoController {
 
 	@GetMapping(value="/list")
 	@Description("Get total todo list by paging")
-	public ResponseEntity<TodoComponentDto> getTodoDataByPaging(@RequestParam int pageNum, @RequestParam int pageCount) {
+	public ResponseEntity<TodoListDto> getTodoListByPaging(@RequestParam int pageNum, @RequestParam int pageCount) {
+	
+		TodoListDto todoList = todoService.getTodoListByPaging(pageNum, pageCount);
+	
+		HttpStatus httpStatus = (todoList == null) ? HttpStatus.NO_CONTENT : HttpStatus.OK;
 		
-		return null;
+		return new ResponseEntity<TodoListDto>(todoList, httpStatus);
 	}
 
 	@PostMapping(value="/data")
 	@Description("Add todo data")
-	public ResponseEntity<TodoComponentDto> addTodoData(@RequestBody TodoComponentDto todoEntity) {
+	public ResponseEntity<TodoResponseDto> addTodoData(@RequestBody TodoComponentDto todoEntity) {
+	
+		TodoResponseDto response = todoService.addTodoData(todoEntity);
 		
-		return null;
+		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
+	
+		return new ResponseEntity<TodoResponseDto>(response, httpStatus);
 	}
 	
 	@PatchMapping(value="/data")
 	@Description("Modfiy todo data")
-	public ResponseEntity<TodoComponentDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) {
+	public ResponseEntity<TodoResponseDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) {
 		
-		return null;
+		TodoResponseDto response = todoService.modifyTodoData(todoEntity);
+		
+		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
+		
+		return new ResponseEntity<TodoResponseDto>(response, httpStatus);
 	}
 	
-	@PatchMapping(value = "/checkFinish")
+	@PatchMapping(value = "/finish")
 	@Description("Modify todo data for isFinished field")
-	public ResponseEntity<TodoComponentDto> modifyTodoDataForFinish(@RequestParam String id) {
+	public ResponseEntity<TodoResponseDto> modifyTodoDataForFinish(@RequestParam String id) {
 		
-		return null;
+		TodoResponseDto response = todoService.modifyTodoDataForFinish(id);
+		
+		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
+		
+		return new ResponseEntity<TodoResponseDto>(response, httpStatus);
 	}
 }
