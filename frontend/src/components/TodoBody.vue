@@ -4,32 +4,65 @@
     <div class="box">
     <!-- <h3>ADD YOUR MEMO</h3> -->
     <b-form @submit="onSubmit" @reset="onReset" v-if="show">
-      <b-form-group id="exampleInputGroup1"
-                    label-for="exampleInput1"
-                    <!-- description="We'll never share your email with anyone else."> -->
-        <b-form-input id="exampleInput1"
-                      type="email"
-                      v-model="form.email"
+      <b-form-group
+        label-cols="1"
+        label="할일 :"
+        label-align="left"
+        label-for="submitTodo"
+        >
+        <b-form-input id="submitTodo"
+                      type="text"
+                      v-model="form.todoContent"
                       required
                       placeholder="메모 작성...">
         </b-form-input>
-        <b-button type="submit" variant="dark" size="sm">ADD</b-button>
-        <b-button type="reset" variant="danger" size="sm">CLEAR</b-button>
       </b-form-group>
+      <b-form-group
+        label-cols-sm="1"
+        label="태그 :"
+        label-align-sm="left"
+        label-for="tagSet"
+        description="태그는 등록된 할일ID만 등록 가능합니다. 등록되지 않은 ID는 태깅이 되지 않습니다."
+        >
+        <b-form-input id="tagSet"
+                      type="text"
+                      v-model="form.tagInput"
+                      placeholder="태그 구분은 comma(,)를 사용하세요."/>
+      </b-form-group>
+      <b-button type="submit" variant="dark" size="sm">{{ buttonMode }}</b-button>
+      <b-button type="reset" variant="danger" size="sm">CLEAR</b-button>
     </b-form>
     </div>
     <!-- Coupon List Box -->
     <h4>TODO LIST</h4>
     <div class="page-count-box">
-    <b-form-select v-model="selected" @change="changePageCount" :options="countOption" size="10" />
+    <b-form-select v-model="bFormSelected" @change="changePageCount" :options="countOption" size="10" />
     </div>
     <div>
-      <b-table :small=true head-variant="dark" striped hover :items="coupons"
-       :fields="fields" :show-empty=true empty-text="There are no records to show."
-       empty-filtered-text="There are no records to show.">
+      <b-table
+      selectable
+      select-mode="single"
+      selectedVariant="secondary"
+      :small=true head-variant="dark" hover :items="todos"
+      :fields="fields" :show-empty=true
+      @row-selected="rowSelected"
+      empty-text="There are no records to show."
+      empty-filtered-text="There are no records to show."
+      >
         <template slot="table-caption empty">
-          This is todo list being registered.
+            Blah
         </template>
+
+        <template slot="todoContent" slot-scope="data">
+            {{ data.item.todoContent }} @ {{data.item.tagSet}}
+        </template>
+
+        <template slot="checkFinish" slot-scope="row">
+        <b-button size="sm" @click="modifyTodoDataForFinish(row.item, row.index, $event.target)" class="mr-1">
+          CHECK
+        </b-button>
+        </template>
+
       </b-table>
       </div>
       <b-pagination align="center" size="sm" :total-rows="totalRow"
@@ -53,14 +86,28 @@ export default {
   data () {
     return {
       form: {
-        email: ''
+        todoContent: '',
+        tagInput: ''
       },
-      apiUrl: 'http://localhost:9000/coupon/',
-      couponCode: '',
+      buttonMode: 'ADD',
+      tagSet: [],
+      apiUrl: 'http://localhost:8080/todo',
       show: true,
-      fields: [ 'id', 'todo', 'couponCode', 'issueDttm' ],
-      coupons: [],
-      selected: 5,
+      fields: [
+        {key:'id', label: 'ID'},
+        {key:'todoContent', label: '할일'},
+        {key:'createDttm', label: '생성일시'},
+        {key:'modifyDttm', label : '변경일시'},
+        {key: 'finished', label : '완료여부',
+         formatter: value => {
+                        return (value) ? 'O' : 'X'
+                    }
+        },
+        {key: 'checkFinish', label : '완료체크'}
+      ],
+      todos: [],
+      selected: [],
+      bFormSelected: 5,
       totalRow: 0,
       pageNum: 1,
       pageCount: 5,
@@ -68,88 +115,131 @@ export default {
     }
   },
   mounted () {
-    this.getCouponsByPaging()
+    this.getTodoListByPaging()
   },
   methods: {
     onSubmit (evt) {
       evt.preventDefault()
-      this.checkEmail()
+      this.makeTagSet()
+      this.addTodoData()
     },
     onReset (evt) {
       evt.preventDefault()
       /* Reset our form values */
-      this.form.email = ''
+      this.form.todoContent = ''
+      this.form.tagInput = ''
       /* Trick to reset/clear native browser form validation state */
       this.show = false
       this.$nextTick(() => { this.show = true }) /* nextTick : 전체가 렌더링된 상태 보장 */
+      this.selected = []
+      this.buttonMode = 'ADD'
     },
 
-    checkEmail: function () {
-      var that = this
-      this.$axios.get(this.apiUrl + this.form.email, {
-        email: this.form.email
-      }).then(function (response) {
-        if (response.data.valid) {
-          swal({
-            title: 'Would you like to get a coupon?',
-            text: 'Press OK to issue a coupon!',
-            type: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#0090EA',
-            cancelButtonColor: '#E52065',
-            cancelButtonText: 'NO'
-          }).then(result => {
-            if (result.value) {
-              that.issueEmail()
-            }
-          })
-        } else {
-          swal({
-            title: 'Can not issue a coupon :(',
-            text: 'The coupon has already been issued with this email!',
-            type: 'error',
-            confirmButtonColor: '#E52065'
-          })
+    rowSelected: function(item) {
+        var data, tags=''
+
+        if(item.length == 0) {
+            this.selected = []
+            return;
         }
-      })
+
+        data = item[0]
+        this.selected = data
+        this.buttonMode = 'EDIT'
+
+        if(data.tagSet.length > 0) {
+            data.tagSet.forEach(function(value) {
+                tags += value + ','
+            })
+        }
+        // $('#tagSet').val(tags.substring(0, tags.length - 1))
+        // $('#submitTodo').val(data.todoContent)
     },
 
-    issueEmail: function () {
-      var that = this
-      this.$axios.post(this.apiUrl, {
-        email: this.form.email
-      }).then(function (response) {
+    makeTagSet: function(){
+        var that = this,
+            tagInput = this.form.tagInput
+
+        if(!tagInput) {
+            console.log("tagset empty")
+            return;
+        }
+
+        tagInput.split(',').forEach(function(value){
+            that.tagSet.push(value*1) // string to int
+        });
+    },
+
+    addTodoData: function(){
+      var that = this;
+
+      this.$axios.post(this.apiUrl + '/data',
+        {
+          todoContent: this.form.todoContent,
+          tagSet: this.tagSet
+        }
+      ).then(function (response) {
         swal({
           type: 'success',
-          text: 'Coupon code : [' + response.data.couponCode + ']'
+          text: 'TODO LIST에 등록 되었습니다.'
         }).then(() => {
-          console.log('들어오나')
-          that.getCouponsByPaging()
+          that.getTodoListByPaging()
         })
-        that.form.email = ''
+        that.form.todoContent = ''
+        that.form.tagInput = ''
       })
     },
 
-    getCouponsByPaging: function () {
-      this.$axios.get(this.apiUrl, {
+    modifyTodoDataForFinish: function(item, index, button) {
+        var that = this
+        console.log(item)
+        console.log(index)
+        console.log(button)
+
+        this.$axios.patch(this.apiUrl + '/finish',
+          {
+            id: item.id
+          }
+        ).then(function (response) {
+          swal({
+            type: 'success',
+            text: '완료처리 되었습니다.'
+          }).then(() => {
+            that.getTodoListByPaging()
+          })
+        })
+        .catch(function(error) {
+            swal({
+                type: '',
+                text: '미완료된 태그가 존재합니다.'
+            })
+        })
+    },
+
+    getTodoListByPaging: function () {
+
+      this.$axios.get(this.apiUrl+'/list', {
         params: {
           pageNum: this.pageNum,
           pageCount: this.pageCount
         }
       }).then(function (response) {
-        this.coupons = response.data.list
+        this.todos = response.data.list
         this.totalRow = response.data.totalRow
       }.bind(this))
+      .catch(function(error) { // out of 2xx
+          console.log('out of 2xx!')
+      })
     },
 
     changePageNum: function (page) {
       this.pageNum = page
-      this.getCouponsByPaging()
+      this.getTodoListByPaging()
     },
 
     changePageCount: function (count) {
       this.pageCount = count
-      this.getCouponsByPaging()
+      this.getTodoListByPaging()
     }
   }
 }
@@ -182,5 +272,23 @@ div .page-count-box {
 button {
   margin-top: 5px;
   margin-left: 5px;
+}
+
+.tags-input{
+    display:-webkit-box;
+    display:-ms-flexbox;
+    display:flex;
+    -ms-flex-wrap:wrap;
+    flex-wrap:wrap;
+    background-color:#fff;
+    border-width:1px;
+    border-radius:.25rem;
+    padding:.5rem 1rem .25rem .5rem;
+}
+
+.tags-input-remove {
+    color: #2779bd;
+    font-size: 1.125rem;
+    line-height: 0.7;
 }
 </style>

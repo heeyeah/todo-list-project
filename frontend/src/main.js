@@ -3,17 +3,24 @@ import BootstrapVue from 'bootstrap-vue'
 import VueSweetalert2 from 'vue-sweetalert2'
 //import VueResource from 'vue-resource'
 import App from './App.vue'
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
 import 'expose-loader?$!expose-loader?jQuery!jquery'
+import 'bootstrap'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+
 
 // ajax
-//import axios from 'axios'
+import axios from 'axios'
+
+// window.Vue = require('vue')
+//import VueTags from 'vue-tags'
 
 Vue.config.productionTip = false
 
-//Object.defineProperty(Vue.prototype, '$axios', {value: axios})
+Vue.prototype.$http=axios // ?
+Object.defineProperty(Vue.prototype, '$axios', {value: axios})
 
+// Vue.component('input-tags', VueTags)
 Vue.use(BootstrapVue)
 //Vue.use(VueResource)
 

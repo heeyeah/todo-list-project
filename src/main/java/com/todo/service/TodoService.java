@@ -122,12 +122,12 @@ public class TodoService {
 		return response;
 	}
 	
-	public TodoResponseDto modifyTodoDataForFinish(String id) {
+	public TodoResponseDto modifyTodoDataForFinish(int id) {
 		
 		TodoResponseDto response = new TodoResponseDto();
 		
 		Set<Integer> tagSet = null;
-		Optional<TodoComponentDto> todoData = todoRedisRepository.findById(id);
+		Optional<TodoComponentDto> todoData = todoRedisRepository.findById(String.valueOf(id));
 		TodoComponentDto currentData;
 		
 		if(todoData.isPresent()) {

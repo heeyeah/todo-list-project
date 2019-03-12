@@ -76,9 +76,9 @@ public class TodoController {
 	
 	@PatchMapping(value = "/finish")
 	@Description("Modify todo data for isFinished field")
-	public ResponseEntity<TodoResponseDto> modifyTodoDataForFinish(@RequestParam String id) {
+	public ResponseEntity<TodoResponseDto> modifyTodoDataForFinish(@RequestBody TodoComponentDto todoEntity) {
 		
-		TodoResponseDto response = todoService.modifyTodoDataForFinish(id);
+		TodoResponseDto response = todoService.modifyTodoDataForFinish(todoEntity.getId());
 		
 		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
 		
