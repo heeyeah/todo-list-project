@@ -48,8 +48,8 @@
             {{ data.item.todoContent }} @ {{data.item.tagSet}}
         </template>
         <template slot="checkFinish" slot-scope="row">
-          <b-button size="sm" @click="modifyTodoDataForFinish(row.item)" class="mr-1">
-            CHECK
+          <b-button size="sm" variant="outline-dark" @click="modifyTodoDataForFinish(row.item)" class="mr-2">
+            ✔️
           </b-button>
         </template>
       </b-table>
@@ -91,7 +91,7 @@ export default {
         tagInput: ''
       },
       tagSet: [],
-      apiUrl: 'http://localhost:8080/todo',
+      apiUrl: 'http://localhost:9000/',
       show: true,
       fields: [
         {key:'id', label: 'ID'},
@@ -142,7 +142,7 @@ export default {
       });
 
         // modify!
-      this.$axios.patch(this.apiUrl + '/data',
+      this.$axios.patch(this.apiUrl + '/todo',
         {
           id: this.modalInfo.id,
           tagSet: tagSetParam,
@@ -225,7 +225,7 @@ export default {
     addTodoData: function(){
       var that = this;
 
-      this.$axios.post(this.apiUrl + '/data',
+      this.$axios.post(this.apiUrl + '/todo',
         {
           todoContent: this.form.todoContent,
           tagSet: this.tagSet
@@ -245,7 +245,7 @@ export default {
     modifyTodoDataForFinish: function(item) {
       var that = this
 
-      this.$axios.patch(this.apiUrl + '/finish',
+      this.$axios.patch(this.apiUrl + '/check',
         {
           id: item.id
         }
@@ -266,7 +266,7 @@ export default {
     },
 
     getTodoListByPaging: function () {
-      this.$axios.get(this.apiUrl+'/list', {
+      this.$axios.get(this.apiUrl+'/todo', {
         params: {
           pageNum: this.pageNum,
           pageCount: this.pageCount

@@ -29,7 +29,8 @@ TODO LIST PROJECT🐣
 ### 프로젝트 빌드 및 실행 방법 (Build & Run)
 
 * Backend
-  ```gradle run```
+  ```gradle bootRun```
 <br>
+
 * Frontend
   ```npm run serve```

@@ -17,20 +17,19 @@ public class TodoComponentDto {
 	private String createDttm;
 	private String modifyDttm;
 	private boolean isFinished;
-	private Set<Integer> tagSet;
-
+	private final Set<Integer> tagSet;
+	
 	public TodoComponentDto() {
 		this.tagSet = new HashSet<Integer>();
 	}
+	
 
 	public int getId() {
 		return id;
 	}
-
 	public void setId(int id) {
 		this.id = id;
 	}
-
 	public String getTodoContent() {
 		return todoContent;
 	}
@@ -67,9 +66,6 @@ public class TodoComponentDto {
 		return tagSet;
 	}
 
-	public void setTagSet(Set<Integer> tagSet) {
-		this.tagSet = tagSet;
-	}
 
 	@Override
 	public String toString() {

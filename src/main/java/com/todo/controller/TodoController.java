@@ -15,16 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.todo.config.TodoResponse;
 import com.todo.dto.TodoComponentDto;
 import com.todo.dto.TodoListDto;
 import com.todo.dto.TodoResponseDto;
-import com.todo.exception.BaseException;
-import com.todo.exception.NoContentException;
 import com.todo.service.TodoService;
 
 @RestController
-@RequestMapping("/")
+@RequestMapping("/todo")
 public class TodoController {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
@@ -32,67 +29,50 @@ public class TodoController {
 	@Autowired
 	private TodoService todoService;
 
-	@GetMapping(value = "/todo/{id}")
+	@GetMapping(value = "/{id}")
 	@Description("Get single todo data")
-	public ResponseEntity<TodoComponentDto> getTodoData(@PathVariable String id) throws NoContentException {
+	public ResponseEntity<TodoComponentDto> getTodoData(@PathVariable String id) throws Exception {
 
 		TodoComponentDto todoData = todoService.getTodoData(id);
-
-		if(todoData == null) throw new NoContentException(String.format("%s로 등록된 할일정보가 없습니다.", id));
 
 		return new ResponseEntity<TodoComponentDto>(todoData, HttpStatus.OK);
 	}
 
-	@GetMapping(value = "/todo")
+	@GetMapping(value = "/")
 	@Description("Get total todo list by paging")
-	public ResponseEntity<TodoListDto> getTodoListByPaging(@RequestParam int pageNum, @RequestParam int pageCount) throws NoContentException {
+	public ResponseEntity<TodoListDto> getTodoListByPaging(@RequestParam int pageNum, @RequestParam int pageCount)
+			throws Exception {
 
 		TodoListDto todoList = todoService.getTodoListByPaging(pageNum, pageCount);
-
-		if (todoList == null) throw new NoContentException("할일정보가 존재하지 않습니다.");
 
 		return new ResponseEntity<TodoListDto>(todoList, HttpStatus.OK);
 	}
 
-	@PostMapping(value = "/todo")
+	@PostMapping(value = "/")
 	@Description("Add todo data")
-	public ResponseEntity<TodoResponseDto> addTodoData(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+	public ResponseEntity<TodoResponseDto> addTodoData(@RequestBody TodoComponentDto todoEntity) throws Exception {
 
 		TodoResponseDto response = todoService.addTodoData(todoEntity);
 
-		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException("등록에 실패했습니다.");
-
 		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
 	}
 
-	@PatchMapping(value = "/todo")
+	@PatchMapping(value = "/")
 	@Description("Modfiy todo data")
-	public ResponseEntity<TodoResponseDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+	public ResponseEntity<TodoResponseDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) throws Exception {
 
 		TodoResponseDto response = todoService.modifyTodoData(todoEntity);
 
-		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException(response.getResponseMessage());
 		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
 	}
 
-	@PatchMapping(value = "/check")
+	@PatchMapping(value = "/toggle")
 	@Description("Check finish field for todo")
-	public ResponseEntity<TodoResponseDto> checkFinishForTodo(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+	public ResponseEntity<TodoResponseDto> checkFinishForTodo(@RequestBody TodoComponentDto todoEntity)
+			throws Exception {
 
 		TodoResponseDto response = todoService.checkFinishForTodo(todoEntity.getId());
 
-		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException(response.getResponseMessage());
-		
-		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
-	}
-
-	@PatchMapping(value = "/uncheck")
-	@Description("Uncheck finish field for todo")
-	public ResponseEntity<TodoResponseDto> uncheckFinishForTodo(@RequestBody TodoComponentDto todoEntity) throws BaseException {
-
-		TodoResponseDto response = todoService.uncheckFinishForTodo(todoEntity.getId());
-
-		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException(response.getResponseMessage());
 		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
 	}
 }
