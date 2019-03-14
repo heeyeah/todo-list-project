@@ -22,6 +22,7 @@ import com.todo.dto.TodoListDto;
 import com.todo.dto.TodoResponseDto;
 import com.todo.exception.BaseException;
 import com.todo.exception.IllegalArgumentException;
+import com.todo.exception.InternalServerException;
 import com.todo.exception.NoContentException;
 import com.todo.exception.RedisDatabaseException;
 import com.todo.util.TimeUtils;
@@ -72,7 +73,7 @@ public class TodoService {
 			list.add(itr.next());
 		}
 
-		Collections.sort(list, (o1, o2) -> o2.getModifyDttm().compareTo(o1.getModifyDttm()));
+		Collections.sort(list, (o1, o2) -> o2.getCreateDttm().compareTo(o1.getCreateDttm()));
 
 		int totalRow = list.size();
 		int totalPage = 0;
@@ -158,6 +159,7 @@ public class TodoService {
 			updateCheckFinishField(currentData, false);
 			logger.info("== Change Finish to NOT Finish. ");
 			response.setResponseCode(TodoResponse.SUCCESS);
+			response.setResponseMessage("uncheck");
 			return response;
 		}
 
@@ -167,6 +169,7 @@ public class TodoService {
 			logger.info("== Related tags don't exist! So just change finish field.");
 			updateCheckFinishField(currentData, true);
 			response.setResponseCode(TodoResponse.SUCCESS);
+			response.setResponseMessage("check");
 			return response;
 		}
 
@@ -191,25 +194,24 @@ public class TodoService {
 			updateCheckFinishField(currentData, true);
 		} else {
 			logger.info(" you must finish list. [{}]", incompleteTodoSet);
-			response.setResponseMessage("미완료인 태그가 존재합니다. => " + incompleteTodoSet);
+			throw new InternalServerException("미완료인 태그가 존재합니다. => " + incompleteTodoSet);
 		}
 
-		TodoResponse code = (isAbleToFinish) ? TodoResponse.SUCCESS : TodoResponse.FAIL;
-		response.setResponseCode(code);
-
+		response.setResponseCode(TodoResponse.SUCCESS);
+		response.setResponseMessage("check");
 		return response;
 	}
 
 	private void updateCheckFinishField(TodoComponentDto todoEntity, boolean flag) throws Exception {
-		
+
 		todoEntity.setFinished(flag);
-		
+
 		try {
 			todoEntity = todoRedisRepository.save(todoEntity);
 		} catch (Exception e) {
 			throw new RedisDatabaseException(e.getMessage());
 		}
-		
+
 		logger.info(" == Check Finish Flag for Todo Data :D ================================");
 		logger.info(" == Flag [{}] {}", flag, todoEntity.toString());
 		logger.info(" ======================================================================");

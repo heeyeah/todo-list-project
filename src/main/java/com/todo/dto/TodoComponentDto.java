@@ -17,7 +17,7 @@ public class TodoComponentDto {
 	private String createDttm;
 	private String modifyDttm;
 	private boolean isFinished;
-	private final Set<Integer> tagSet;
+	private Set<Integer> tagSet;
 	
 	public TodoComponentDto() {
 		this.tagSet = new HashSet<Integer>();

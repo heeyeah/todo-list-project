@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import BootstrapVue from 'bootstrap-vue'
-import VueSweetalert2 from 'vue-sweetalert2'
+// import VueSweetalert2 from 'vue-sweetalert2'
 //import VueResource from 'vue-resource'
 import App from './App.vue'
 import 'expose-loader?$!expose-loader?jQuery!jquery'
@@ -29,7 +29,7 @@ const options = {
   cancelButtonColor: '#ff7674'
 }
 
-Vue.use(VueSweetalert2, options)
+// Vue.use(VueSweetalert2, options)
 
 new Vue({
   render: h => h(App),

@@ -39,8 +39,11 @@
         selectable
         select-mode="single"
         selectedVariant="secondary"
-        :small=true head-variant="dark" hover :items="todos"
-        :fields="fields" :show-empty=true
+        :small=true head-variant="dark" hover
+        :items="todos"
+        :fields="fields"
+        :tbody-tr-class="rowClass"
+        :show-empty=true
         @row-selected="rowSelected"
         empty-text="There are no records to show."
         empty-filtered-text="There are no records to show.">
@@ -48,7 +51,7 @@
             {{ data.item.todoContent }} @ {{data.item.tagSet}}
         </template>
         <template slot="checkFinish" slot-scope="row">
-          <b-button size="sm" variant="outline-dark" @click="modifyTodoDataForFinish(row.item)" class="mr-2">
+          <b-button size="sm" variant="outline-dark" @click="checkFinishTodo(row.item)" class="mr-2">
             ✔️
           </b-button>
         </template>
@@ -60,9 +63,18 @@
         ref="modal"
         title="Edit your MEMO"
         @ok="handleOk">
-          <form @submit.stop.prevent="handleSubmit">
-            <b-form-input type="text" placeholder="Edit your memo" v-model="modalInfo.currMemo" />
-            <b-form-input type="text" placeholder="Edit your tag set" v-model="modalInfo.currTags" />
+          <form @submit.stop.prevent="modifyTodoData">
+            <b-row clas="mb-1">
+              <b-col cols="2">할일</b-col>
+              <b-col><b-form-input type="text" placeholder="Edit your memo" v-model="modalInfo.currMemo" /></b-col>
+            </b-row>
+            <b-row clas="mb-1">
+              <b-col cols="2">태그</b-col>
+              <b-col><b-form-input type="text" placeholder="Edit your tag set" v-model="modalInfo.currTags" /></b-col>
+            </b-row>
+
+
+
           </form>
       </b-modal>
     </div>
@@ -91,13 +103,17 @@ export default {
         tagInput: ''
       },
       tagSet: [],
-      apiUrl: 'http://localhost:9000/',
+      apiUrl: 'http://localhost:9000/todo/',
       show: true,
       fields: [
         {key:'id', label: 'ID'},
         {key:'todoContent', label: '할일'},
-        {key:'createDttm', label: '생성일시'},
-        {key:'modifyDttm', label : '변경일시'},
+        {key:'createDttm', label: '생성일시',
+          formatter: value => { return value.substring(2, 16)}
+        },
+        {key:'modifyDttm', label : '변경일시',
+          formatter: value => { return value.substring(2, 16)}
+        },
         {key: 'finished', label : '완료여부',
          formatter: value => {
                         return (value) ? 'O' : 'X'
@@ -111,7 +127,7 @@ export default {
       pageNum: 1,
       pageCount: 5,
       countOption: pageCountSelect,
-      modalInfo: {currMemo: '', currTags: '', id: '', createDttm: ''}
+      modalInfo: {currMemo: '', currTags: '', id: '', createDttm: '', finished: false}
     }
   },
 
@@ -127,48 +143,13 @@ export default {
       if (!this.modalInfo.currMemo) {
         alert('Please enter your memo')
       } else {
-        this.handleSubmit()
+        this.modifyTodoData()
       }
     },
 
-    handleSubmit() {
-      var that= this,
-          tagSetParam = []
-
-      this.modalInfo.currTags.split(',').forEach(function(value){
-        if(value) {
-          tagSetParam.push(value*1) // string to int
-        }
-      });
-
-        // modify!
-      this.$axios.patch(this.apiUrl + '/todo',
-        {
-          id: this.modalInfo.id,
-          tagSet: tagSetParam,
-          todoContent: this.modalInfo.currMemo,
-          createDttm: this.modalInfo.createDttm
-        }
-      ).then(function (response) {
-        swal({
-          type: 'success',
-          text: '수정이 완료되었습니다.'
-        }).then(() => {
-          that.getTodoListByPaging()
-        })
-      })
-      .catch(function(error) {
-        swal({
-          type: '',
-          text: '수정에 실패했습니다.'
-        })
-      })
-
-      this.$nextTick(() => {
-        // Wrapped in $nextTick to ensure DOM is rendered before closing
-        this.$refs.modal.hide()
-        this.getTodoListByPaging()
-      })
+    rowClass(item, type) {
+      if(!item) return
+      if(item.finished === true) return 'table-success'
     },
 
     onSubmit (evt) {
@@ -196,20 +177,18 @@ export default {
 
         data = item[0]
 
-        this.modalInfo.currMemo = data.todoContent
-        this.modalInfo.currTags = data.tagSet
-        this.modalInfo.id = data.id
-        this.modalInfo.createDttm = data.createDttm
+        this.modalInfo = {
+          currMemo: data.todoContent,
+          currTags: data.tagSet,
+          id: data.id,
+          createDttm: data.createDttm,
+          finished: false
+        }
 
         this.$root.$emit('bv::show::modal', 'modalInfo', null)
     },
 
-    resetModal() {
-      this.modalInfo.title = ''
-      this.modalInfo.content = ''
-    },
-
-    makeTagSet: function(){
+    makeTagSet: function() {
       var that = this,
         tagInput = this.form.tagInput
 
@@ -222,10 +201,10 @@ export default {
       });
     },
 
-    addTodoData: function(){
+    addTodoData: function() {
       var that = this;
 
-      this.$axios.post(this.apiUrl + '/todo',
+      this.$axios.post(this.apiUrl,
         {
           todoContent: this.form.todoContent,
           tagSet: this.tagSet
@@ -233,7 +212,9 @@ export default {
       ).then(function (response) {
         swal({
           type: 'success',
-          text: 'TODO LIST에 등록 되었습니다.'
+          title: 'TODO LIST에 등록되었습니다.',
+          showConfirmButton: false,
+          timer: 1000
         }).then(() => {
           that.getTodoListByPaging()
         })
@@ -242,17 +223,33 @@ export default {
       })
     },
 
-    modifyTodoDataForFinish: function(item) {
-      var that = this
+    modifyTodoData() {
+      var that= this,
+          tagSetParam = []
 
-      this.$axios.patch(this.apiUrl + '/check',
+      if(this.modalInfo.currTags.length > 0) {
+        this.modalInfo.currTags.split(',').forEach(function(value){
+          if(value) {
+            tagSetParam.push(value*1) // string to int
+          }
+        });
+      }
+
+        // modify!
+      this.$axios.patch(this.apiUrl,
         {
-          id: item.id
+          id: this.modalInfo.id,
+          tagSet: tagSetParam,
+          todoContent: this.modalInfo.currMemo,
+          createDttm: this.modalInfo.createDttm,
+          finished: this.modalInfo.finished
         }
       ).then(function (response) {
         swal({
           type: 'success',
-          text: '완료처리 되었습니다.'
+          title: '수정이 완료되었습니다.',
+          showConfirmButton: false,
+          timer: 1500
         }).then(() => {
           that.getTodoListByPaging()
         })
@@ -260,13 +257,53 @@ export default {
       .catch(function(error) {
         swal({
           type: '',
-          text: '미완료된 태그가 존재합니다.'
+          text: '수정에 실패했습니다.'
+        })
+      })
+
+      this.$nextTick(() => {
+        // Wrapped in $nextTick to ensure DOM is rendered before closing
+        this.$refs.modal.hide()
+        this.getTodoListByPaging()
+      })
+    },
+
+    checkFinishTodo: function(item) {
+      var that = this
+
+      this.$axios.patch(this.apiUrl + 'toggle',
+        {
+          id: item.id
+        }
+      ).then(function (response) {
+        var msg
+
+        if(response.data.responseMessage === 'check') {
+          msg = '완료처리 되었습니다.'
+        } else {
+          msg = '미완료처리 되었습니다.'
+        }
+        swal({
+          type: 'success',
+          title: msg,
+          showConfirmButton: false,
+          timer: 1500
+        }).then(() => {
+          that.getTodoListByPaging()
+        })
+      })
+      .catch(function(error) {
+        swal({
+          type: 'error',
+          title: error.response.data.responseMessage,
+          showConfirmButton: false,
+          timer: 2000
         })
       })
     },
 
     getTodoListByPaging: function () {
-      this.$axios.get(this.apiUrl+'/todo', {
+      this.$axios.get(this.apiUrl, {
         params: {
           pageNum: this.pageNum,
           pageCount: this.pageCount
