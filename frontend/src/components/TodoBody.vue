@@ -182,7 +182,7 @@ export default {
           currTags: data.tagSet,
           id: data.id,
           createDttm: data.createDttm,
-          finished: false
+          finished: data.finished
         }
 
         this.$root.$emit('bv::show::modal', 'modalInfo', null)
@@ -201,7 +201,7 @@ export default {
       });
     },
 
-    addTodoData: function() {
+    addTodoData: function(){
       var that = this;
 
       this.$axios.post(this.apiUrl,
