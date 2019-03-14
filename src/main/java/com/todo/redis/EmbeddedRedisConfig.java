@@ -11,25 +11,25 @@ import org.springframework.context.annotation.Profile;
 
 import redis.embedded.RedisServer;
 
-@Profile("local") // profile이 local일때만 활성화
+@Profile("local") // active when profile is local
 @Configuration
 public class EmbeddedRedisConfig {
 
 	@Value("${spring.redis.port}")
-    private int redisPort;
+	private int redisPort;
 
-    private RedisServer redisServer;
+	private RedisServer redisServer;
 
-    @PostConstruct
-    public void redisServer() throws IOException {
-            redisServer = new RedisServer(redisPort);
-            redisServer.start();
-    }
+	@PostConstruct
+	public void redisServer() throws IOException {
+		redisServer = new RedisServer(redisPort);
+		redisServer.start();
+	}
 
-    @PreDestroy
-    public void stopRedis() {
-        if (redisServer != null) {
-            redisServer.stop();
-        }
-    }
+	@PreDestroy
+	public void stopRedis() {
+		if (redisServer != null) {
+			redisServer.stop();
+		}
+	}
 }

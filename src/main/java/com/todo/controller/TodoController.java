@@ -8,21 +8,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.todo.config.TodoResponse;
 import com.todo.dto.TodoComponentDto;
 import com.todo.dto.TodoListDto;
 import com.todo.dto.TodoResponseDto;
+import com.todo.exception.BaseException;
+import com.todo.exception.NoContentException;
 import com.todo.service.TodoService;
 
 @RestController
-@RequestMapping("/todo")
+@RequestMapping("/")
 public class TodoController {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
@@ -30,58 +32,67 @@ public class TodoController {
 	@Autowired
 	private TodoService todoService;
 
-	@GetMapping(value="/data")
+	@GetMapping(value = "/todo/{id}")
 	@Description("Get single todo data")
-	public ResponseEntity<TodoComponentDto> getTodoData(@RequestParam(required=false, value="id") String id) {
-		
+	public ResponseEntity<TodoComponentDto> getTodoData(@PathVariable String id) throws NoContentException {
+
 		TodoComponentDto todoData = todoService.getTodoData(id);
-		
-		HttpStatus httpStatus = (todoData == null) ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-		
-		return new ResponseEntity<TodoComponentDto>(todoData, httpStatus);
+
+		if(todoData == null) throw new NoContentException(String.format("%s로 등록된 할일정보가 없습니다.", id));
+
+		return new ResponseEntity<TodoComponentDto>(todoData, HttpStatus.OK);
 	}
 
-	@GetMapping(value="/list")
+	@GetMapping(value = "/todo")
 	@Description("Get total todo list by paging")
-	public ResponseEntity<TodoListDto> getTodoListByPaging(@RequestParam int pageNum, @RequestParam int pageCount) {
-	
+	public ResponseEntity<TodoListDto> getTodoListByPaging(@RequestParam int pageNum, @RequestParam int pageCount) throws NoContentException {
+
 		TodoListDto todoList = todoService.getTodoListByPaging(pageNum, pageCount);
-	
-		HttpStatus httpStatus = (todoList == null) ? HttpStatus.NO_CONTENT : HttpStatus.OK;
-		
-		return new ResponseEntity<TodoListDto>(todoList, httpStatus);
+
+		if (todoList == null) throw new NoContentException("할일정보가 존재하지 않습니다.");
+
+		return new ResponseEntity<TodoListDto>(todoList, HttpStatus.OK);
 	}
 
-	@PostMapping(value="/data")
+	@PostMapping(value = "/todo")
 	@Description("Add todo data")
-	public ResponseEntity<TodoResponseDto> addTodoData(@RequestBody TodoComponentDto todoEntity) {
-	
+	public ResponseEntity<TodoResponseDto> addTodoData(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+
 		TodoResponseDto response = todoService.addTodoData(todoEntity);
-		
-		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
-	
-		return new ResponseEntity<TodoResponseDto>(response, httpStatus);
+
+		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException("등록에 실패했습니다.");
+
+		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
 	}
-	
-	@PatchMapping(value="/data")
+
+	@PatchMapping(value = "/todo")
 	@Description("Modfiy todo data")
-	public ResponseEntity<TodoResponseDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) {
-		
+	public ResponseEntity<TodoResponseDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+
 		TodoResponseDto response = todoService.modifyTodoData(todoEntity);
-		
-		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
-		
-		return new ResponseEntity<TodoResponseDto>(response, httpStatus);
+
+		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException(response.getResponseMessage());
+		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
 	}
-	
-	@PatchMapping(value = "/finish")
-	@Description("Modify todo data for isFinished field")
-	public ResponseEntity<TodoResponseDto> modifyTodoDataForFinish(@RequestBody TodoComponentDto todoEntity) {
+
+	@PatchMapping(value = "/check")
+	@Description("Check finish field for todo")
+	public ResponseEntity<TodoResponseDto> checkFinishForTodo(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+
+		TodoResponseDto response = todoService.checkFinishForTodo(todoEntity.getId());
+
+		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException(response.getResponseMessage());
 		
-		TodoResponseDto response = todoService.modifyTodoDataForFinish(todoEntity.getId());
-		
-		HttpStatus httpStatus = (response.getResponseCode() == TodoResponse.SUCCESS) ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR;
-		
-		return new ResponseEntity<TodoResponseDto>(response, httpStatus);
+		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
+	}
+
+	@PatchMapping(value = "/uncheck")
+	@Description("Uncheck finish field for todo")
+	public ResponseEntity<TodoResponseDto> uncheckFinishForTodo(@RequestBody TodoComponentDto todoEntity) throws BaseException {
+
+		TodoResponseDto response = todoService.uncheckFinishForTodo(todoEntity.getId());
+
+		if (response.getResponseCode() == TodoResponse.FAIL) throw new BaseException(response.getResponseMessage());
+		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
 	}
 }

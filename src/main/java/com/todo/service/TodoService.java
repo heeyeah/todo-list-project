@@ -21,84 +21,85 @@ import com.todo.config.TodoResponse;
 import com.todo.dto.TodoComponentDto;
 import com.todo.dto.TodoListDto;
 import com.todo.dto.TodoResponseDto;
+import com.todo.exception.BaseException;
 import com.todo.redis.TodoRedisRepository;
 
 @Service
 public class TodoService {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
-	private final AtomicInteger counter = new AtomicInteger();
-	
+	private static AtomicInteger counter = new AtomicInteger();
+
 	@Autowired
-    private TodoRedisRepository todoRedisRepository;
+	private TodoRedisRepository todoRedisRepository;
+
 	
 	public TodoComponentDto getTodoData(String id) {
 
 		Optional<TodoComponentDto> optionalResult = todoRedisRepository.findById(id);
 
 		TodoComponentDto todoData = optionalResult.orElse(null);
-	
-        return todoData;
+
+		return todoData;
 	}
-	
+
 	public TodoResponseDto addTodoData(TodoComponentDto todoEntity) {
-		
+
 		TodoResponseDto response = new TodoResponseDto();
-		
+
 		String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
 
 		todoEntity.setId(counter.incrementAndGet());
 		todoEntity.setFinished(false);
 		todoEntity.setCreateDttm(now);
 		todoEntity.setModifyDttm(now);
-		
+
 		todoRedisRepository.save(todoEntity);
-		
+
 		logger.info(" == ADD Todo Data :D ==================================================");
 		logger.info(" == {}", todoEntity.toString());
 		logger.info(" ======================================================================");
-		
+
 		response.setResponseCode(TodoResponse.SUCCESS);
 		return response;
 	}
-	
+
 	public TodoResponseDto modifyTodoData(TodoComponentDto todoEntity) {
 
-		
 		TodoResponseDto response = new TodoResponseDto();
-		
+
 		String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS"));
 
 		todoEntity.setModifyDttm(now);
 
 		todoRedisRepository.save(todoEntity);
-		
+
 		logger.info(" == EDIT Todo Data :D =================================================");
 		logger.info(" == {}", todoEntity.toString());
 		logger.info(" ======================================================================");
-		
+
 		response.setResponseCode(TodoResponse.SUCCESS);
 		return response;
 	}
-	
+
 	public TodoListDto getTodoListByPaging(int pageNum, int pageCount) {
-		
+
 		TodoListDto response = new TodoListDto();
 
 		Iterator<TodoComponentDto> itr = todoRedisRepository.findAll().iterator();
 
 		List<TodoComponentDto> list = new ArrayList<TodoComponentDto>();
-		
-		while(itr.hasNext()) {
+
+		while (itr.hasNext()) {
 			list.add(itr.next());
 		}
-		
+
 		Collections.sort(list, (o1, o2) -> o2.getModifyDttm().compareTo(o1.getModifyDttm()));
-		
+
 		int totalRow = list.size();
 		int totalPage = 0;
-		
-		if(totalRow % pageCount == 0) {
+
+		if (totalRow % pageCount == 0) {
 			totalPage = totalRow / pageCount;
 		} else {
 			totalPage = (totalRow / pageCount) + 1;
@@ -112,76 +113,82 @@ public class TodoService {
 		response.setPageNum(pageNum);
 		response.setPageCount(pageCount);
 		response.setList(list.subList(fromIndex, toIndex));
-		
-		
+
 		logger.info(" == LIST Todo Data :D =================================================");
 		logger.info(" == {}", response.toString());
 		logger.info(" ======================================================================");
-		
-		
+
 		return response;
 	}
-	
-	public TodoResponseDto modifyTodoDataForFinish(int id) {
-		
+
+	public TodoResponseDto uncheckFinishForTodo(int id) {
+
 		TodoResponseDto response = new TodoResponseDto();
-		
-		Set<Integer> tagSet = null;
-		Optional<TodoComponentDto> todoData = todoRedisRepository.findById(String.valueOf(id));
-		TodoComponentDto currentData;
-		
-		if(todoData.isPresent()) {
-			currentData = todoData.get();
-		} else {
+		TodoComponentDto currentData = this.getTodoData(String.valueOf(id));
+
+		if (currentData == null) {
 			response.setResponseCode(TodoResponse.FAIL);
 			return response;
 		}
-		
-		tagSet = currentData.getTagSet();
-		
-		if(tagSet.isEmpty()) {
+
+		TodoResponse resCode = this.updateCheckFinishField(currentData, false);
+
+		response.setResponseCode(resCode);
+
+		return response;
+	}
+
+	public TodoResponseDto checkFinishForTodo(int id) {
+
+		TodoResponseDto response = new TodoResponseDto();
+
+		TodoComponentDto currentData = this.getTodoData(String.valueOf(id));
+
+		if (currentData == null) {
+			response.setResponseCode(TodoResponse.FAIL);
+			return response;
+		}
+
+		Set<Integer> tagSet = currentData.getTagSet();
+
+		if (tagSet.isEmpty()) {
 			logger.info("related tags don't exist! ");
-			updateFinishField(currentData);
+			updateCheckFinishField(currentData, true);
 			response.setResponseCode(TodoResponse.SUCCESS);
 			return response;
 		}
-		
+
 		Set<String> strSet = tagSet.stream().map(i -> String.valueOf(i)).collect(Collectors.toSet());
-		
+
 		Iterable<String> ids = () -> strSet.iterator();
-		
-		tagSet.iterator();
 
 		Iterator<TodoComponentDto> itrr = todoRedisRepository.findAllById(ids).iterator();
 
 		Set<Integer> yetFinish = new HashSet<Integer>();
 		boolean isAbleToFinish = true;
-		while(itrr.hasNext()) {
+		while (itrr.hasNext()) {
 			TodoComponentDto el = itrr.next();
-			if(!el.isFinished()) {
+			if (!el.isFinished()) {
 				isAbleToFinish = false;
 				yetFinish.add(el.getId());
 			}
 		}
-		
-		if(isAbleToFinish) {
-			updateFinishField(currentData);
+
+		if (isAbleToFinish) {
+			updateCheckFinishField(currentData, true);
 		} else {
 			logger.info(" you must finish list. [{}]", yetFinish);
 		}
-		
+
 		TodoResponse code = (isAbleToFinish) ? TodoResponse.SUCCESS : TodoResponse.FAIL;
 		response.setResponseCode(code);
-		
+
 		return response;
 	}
-	
-	private TodoResponse updateFinishField(TodoComponentDto todoEntity) {
 
-		todoEntity.setFinished(true);
+	private TodoResponse updateCheckFinishField(TodoComponentDto todoEntity, boolean flag) {
+		todoEntity.setFinished(flag);
 		todoRedisRepository.save(todoEntity);
-		logger.info(" !!! yeah, is finished!");
-		
 		return TodoResponse.SUCCESS;
 	}
 }
