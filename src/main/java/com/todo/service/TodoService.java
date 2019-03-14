@@ -157,7 +157,7 @@ public class TodoService {
 
 		if (currentData.isFinished()) { // uncheck
 			updateCheckFinishField(currentData, false);
-			logger.info("== Change Finish to NOT Finish. ");
+			logger.debug("== Change Finish to NOT Finish. ");
 			response.setResponseCode(TodoResponse.SUCCESS);
 			response.setResponseMessage("uncheck");
 			return response;
@@ -166,7 +166,7 @@ public class TodoService {
 		Set<Integer> tagSet = currentData.getTagSet();
 
 		if (tagSet.isEmpty()) {
-			logger.info("== Related tags don't exist! So just change finish field.");
+			logger.debug("== Related tags don't exist! So just change finish field.");
 			updateCheckFinishField(currentData, true);
 			response.setResponseCode(TodoResponse.SUCCESS);
 			response.setResponseMessage("check");
@@ -191,9 +191,10 @@ public class TodoService {
 		}
 
 		if (isAbleToFinish) {
+			logger.debug(" All related tag is finished!");
 			updateCheckFinishField(currentData, true);
 		} else {
-			logger.info(" you must finish list. [{}]", incompleteTodoSet);
+			logger.debug(" you must finish list. [{}]", incompleteTodoSet);
 			throw new InternalServerException("미완료인 태그가 존재합니다. => " + incompleteTodoSet);
 		}
 

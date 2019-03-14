@@ -33,6 +33,8 @@ public class TodoController {
 	@Description("Get single todo data")
 	public ResponseEntity<TodoComponentDto> getTodoData(@PathVariable String id) throws Exception {
 
+		logger.info("== GET[/todo/id] getTodoData START ===============");
+		
 		TodoComponentDto todoData = todoService.getTodoData(id);
 
 		return new ResponseEntity<TodoComponentDto>(todoData, HttpStatus.OK);
@@ -43,6 +45,8 @@ public class TodoController {
 	public ResponseEntity<TodoListDto> getTodoListByPaging(@RequestParam int pageNum, @RequestParam int pageCount)
 			throws Exception {
 
+		logger.info("== GET[/todo] getTodoListByPaging START ===============");
+		
 		TodoListDto todoList = todoService.getTodoListByPaging(pageNum, pageCount);
 
 		return new ResponseEntity<TodoListDto>(todoList, HttpStatus.OK);
@@ -51,7 +55,9 @@ public class TodoController {
 	@PostMapping(value = "/")
 	@Description("Add todo data")
 	public ResponseEntity<TodoResponseDto> addTodoData(@RequestBody TodoComponentDto todoEntity) throws Exception {
-
+		
+		logger.info("== POST[/todo] addTodoData START ===============");
+		
 		TodoResponseDto response = todoService.addTodoData(todoEntity);
 
 		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
@@ -61,6 +67,8 @@ public class TodoController {
 	@Description("Modfiy todo data")
 	public ResponseEntity<TodoResponseDto> modifyTodoData(@RequestBody TodoComponentDto todoEntity) throws Exception {
 
+		logger.info("== PATCH[/todo] modifyTodoData START ===============");
+		
 		TodoResponseDto response = todoService.modifyTodoData(todoEntity);
 
 		return new ResponseEntity<TodoResponseDto>(response, HttpStatus.OK);
@@ -70,6 +78,8 @@ public class TodoController {
 	@Description("Check finish field for todo")
 	public ResponseEntity<TodoResponseDto> checkFinishForTodo(@RequestBody TodoComponentDto todoEntity)
 			throws Exception {
+
+		logger.info("== PATCH[/todo/toggle] checkFinishForTodo START ===============");
 
 		TodoResponseDto response = todoService.checkFinishForTodo(todoEntity.getId());
 
