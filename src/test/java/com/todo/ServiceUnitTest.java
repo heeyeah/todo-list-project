@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,9 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.fasterxml.jackson.annotation.JacksonInject;
 import com.todo.config.TodoResponse;
-import com.todo.config.redis.TodoRedisRepository;
 import com.todo.dto.TodoComponentDto;
 import com.todo.dto.TodoListDto;
 import com.todo.dto.TodoResponseDto;

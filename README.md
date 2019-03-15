@@ -26,7 +26,7 @@ TODO LIST PROJECT🐣
   * 완료처리 시 참조가 걸린 완료되지 않은 할일이 있다면 완료처리할 수 없다.
 <br/>
 
-* 단위테스트 필수, 통합테스트는 선택 **➡JUnit**
+* 단위테스트 필수, 통합테스트는 선택 **➡Swagger & JUnit**
 #### 해결전략
 
 * RestfulAPI를 사용해서 todo resource에 대해 처리
@@ -59,8 +59,7 @@ TODO LIST PROJECT🐣
   - Build with Gradle
 * Java1.8
 * Redis
-* Swagger (API features)
-* JUnit Test
+* Swagger (API features) & JUnit
 
 #### Frontend
 * Vue.js
